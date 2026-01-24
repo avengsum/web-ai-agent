@@ -55,8 +55,6 @@ class LLMClient:
 
     }
 
-    print("here 1")
-
     try:
       response = requests.post(
         f"{self.base_url}/chat/completions",
@@ -64,10 +62,7 @@ class LLMClient:
         json=data,
         stream=True
       )
-      print("here 2")
       response.raise_for_status()
-
-      print("here 3")
 
       for line in response.iter_lines():
         if line:

@@ -1,4 +1,5 @@
 from agent.core import LLMClient
+from context import context
 
 
 def non_streaming():
@@ -34,7 +35,7 @@ def non_streaming():
     print(res['content'])
 
     test_messages.append({
-      "role":"system",
+      "role":"assistant",
       "content": res['content']
     })
 
@@ -48,6 +49,7 @@ def stream_Res():
     ]
   
   model = LLMClient()
+  ctx = context.ContextManager()
 
   while True:
 
@@ -60,25 +62,19 @@ def stream_Res():
     if not user_input:
       continue
 
-    test_messages.append({
-      "role":"user",
-      "content":user_input
-    })
+    ctx.add_message("user",user_input)
 
     try:
       full_resposne = ""
 
-      for chunk in model.chat_stream(test_messages):
+      for chunk in model.chat_stream(ctx.get_messages()):
         print(chunk,end="" ,flush=True)
 
         full_resposne +=chunk
 
       print("\n")
 
-      test_messages.append({
-        "role":"system",
-        "content":full_resposne
-      })
+      ctx.add_message("assistant",full_resposne)
 
     except Exception as e:
       print(f"\n❌ Error: {e}\n")
