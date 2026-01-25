@@ -33,9 +33,8 @@ class LLMClient:
       response.raise_for_status()
       result = response.json()
 
-      return{
-        "content" : result['choices'][0]['message']['content']
-      }
+      return result["choices"][0]["message"]
+    
     except Exception as e:
       print(f"Error calling OpenRouter: {e}")
       raise
@@ -87,13 +86,11 @@ class LLMClient:
               if "content" in delta:
                 yield delta["content"]
               
-              # --- VITAL FIX BELOW ---
+             
               if "tool_calls" in delta:
-                # We check specifically for the key to avoid the error
                 yield {
                   "tool_calls": delta["tool_calls"] 
                 }
-              # -----------------------
           
           except json.JSONDecodeError:
              continue

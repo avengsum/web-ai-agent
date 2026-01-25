@@ -1,16 +1,14 @@
+import json
 from agent.core import LLMClient
 from context import context
-from tool.list_file import list_files
+from tool import list_file
 
 
 def non_streaming():
   print("\n[1] Initializing LLM connections...")
-
-  test_messages = [
-        {"role": "user", "content": "hello"}
-    ]
   
   model = LLMClient()
+  ctx = context.ContextManager()
 
   while True:
     user_input = input("prompts:")
@@ -24,36 +22,65 @@ def non_streaming():
     if not user_input:
       continue
 
-    test_messages.append({
-      "role":"user",
-      "content": user_input
-    })
+    ctx.add_message(
+      role="user",
+      content=user_input
+    )
 
-    print("Agent: " , end="")
+    res = model.chat(ctx.get_messages())
 
-    res = model.chat(test_messages)
+    ## no tool called
 
-    print(res['content'])
+    if 'tool_calls' not in res:
+      print("Agent:", res["content"])
+      ctx.add_message(
+      role="assistant",
+      content=res["content"] 
+      )
+      continue
 
-    test_messages.append({
-      "role":"assistant",
-      "content": res['content']
-    })
+    ctx.add_message(
+      role="assistant",
+      content=res["content"],
+      tool_calls=res["tool_calls"]
+    )
 
+    for tool_call in res["tool_calls"]:
+      tool_id = tool_call["id"]
+      func_name = tool_call["function"]["name"]
+      args = json.loads(tool_call["function"]["arguments"] or "{}")
+      
+      if func_name == "list_files":
+        result = list_file.list_files(args.get("directory","."))
 
+      else:
+        result = f"Error: Unknown tool '{func_name}'"
+
+      ## send tool result back
+      ctx.add_message(role="tool", 
+                    content=result,
+                    tool_call_id=tool_id
+        )
+  
+    ## now again send a request so that we can get result
+
+    tool_result = model.chat(ctx.get_messages())
+
+    print("Agent:", tool_result["content"])
+    ## now add this response also 
+    ctx.add_message(
+      role="assistant",
+      content=tool_result["content"]
+    )
+    
 
 def stream_Res():
   print("\n[1] Initializing LLM connections... for streaming response")
-
-  test_messages = [
-        {"role": "user", "content": "hello"}
-    ]
   
   model = LLMClient()
   ctx = context.ContextManager()
 
   while True:
-
     user_input = input("You: ").strip()
 
     if user_input.lower() in ['exit' , 'quit' , 'bye']:
@@ -63,71 +90,83 @@ def stream_Res():
     if not user_input:
       continue
 
-    ctx.add_message("user",user_input)
+    ctx.add_message("user", user_input)
 
-   # The Agent Loop: This allows the AI to call multiple tools in a row
-    while True: 
+    try:
       full_response = ""
-      tool_calls = [] # To store any tool requests found in the stream
+      # Buffer to accumulate partial tool chunks
+      tool_calls_buffer = {} 
+      
+      print("AI: ", end="", flush=True)
 
-            # Pass tools=TOOLS_SCHEMA to your chat_stream
       for chunk in model.chat_stream(ctx.get_messages()):
-                # If chunk is text, print it
         if isinstance(chunk, str):
-            print(chunk, end="", flush=True)
-            full_response += chunk
-                # If chunk contains a tool call (logic handled in LLMClient)
-        elif hasattr(chunk, 'tool_calls'):
-            tool_calls.extend(chunk.tool_calls)
-
-      print("\n")
-
-            # CASE A: The AI just talked to you (No tools)
-      if not tool_calls:
-        ctx.add_message("assistant", full_response)
-        break # Wait for next user input
-
-            # CASE B: The AI wants to use a tool
-      # Convert tool calls to the format expected by the API
-      tool_calls_list = [
-        {
-          "id": tool.id,
-          "type": "function",
-          "function": {
-            "name": tool.function.name,
-            "arguments": tool.function.arguments
-          }
-        }
-        for tool in tool_calls
-      ]
-      ctx.add_message("assistant", full_response if full_response else None, tool_calls=tool_calls_list)
+          print(chunk, end="", flush=True)
+          full_response += chunk
+        
+        elif isinstance(chunk, dict) and "tool_calls" in chunk:
+          for tc_chunk in chunk["tool_calls"]:
+            index = tc_chunk["index"]
             
-      for tool in tool_calls:
-        print(f"--- Running Tool: {tool.function.name} ---")
-                
-                # Execute the actual Python function
-        import json
+            # Initialize buffer for this index if not exists
+            if index not in tool_calls_buffer:
+              tool_calls_buffer[index] = {
+                "id": "",
+                "type": "function",
+                "function": { "name": "", "arguments": "" }
+              }
+            
+            # Combine the chunks
+            if "id" in tc_chunk:
+              tool_calls_buffer[index]["id"] += tc_chunk["id"]
+            
+            if "function" in tc_chunk:
+              if "name" in tc_chunk["function"]:
+                tool_calls_buffer[index]["function"]["name"] += tc_chunk["function"]["name"]
+              if "arguments" in tc_chunk["function"]:
+                tool_calls_buffer[index]["function"]["arguments"] += tc_chunk["function"]["arguments"]
+
+      print("\n") 
+
+      # Case 1: Just text, no tools
+      if not tool_calls_buffer:
+        ctx.add_message("assistant", full_response)
+        continue
+
+      # Case 2: Tools were called
+      normalized_tool_calls = list(tool_calls_buffer.values())
+
+      ctx.add_message(
+        role="assistant",
+        content=full_response if full_response else None,
+        tool_calls=normalized_tool_calls
+      )
+
+      # Execute Tools
+      for tool in normalized_tool_calls:
         try:
-          # Parse tool arguments
-          args = json.loads(tool.function.arguments) if tool.function.arguments else {}
-          directory = args.get("directory", ".")
+          func_name = tool["function"]["name"]
+          args_str = tool["function"]["arguments"]
+          args = json.loads(args_str) if args_str else {}
           
-          if tool.function.name == "list_files":
-            result = list_files(directory)
+          print(f"🛠️  Executing: {func_name} | Args: {args}")
+
+          if func_name == "list_files":
+            result = list_file.list_files(args.get("directory", "."))
           else:
-            result = f"Unknown tool: {tool.function.name}"
+            result = f"Error: Unknown tool '{func_name}'"
+
         except json.JSONDecodeError:
-          # If arguments parsing fails, use defaults
-          if tool.function.name == "list_files":
-            result = list_files()
-          else:
-            result = f"Unknown tool: {tool.function.name}"
-                    
-        ctx.add_message("tool", result, tool_call_id=tool.id)
+           result = "Error: Invalid JSON arguments from AI"
+        except Exception as e:
+           result = f"Error executing tool: {e}"
 
-            # After adding tool results, the 'while True' loop repeats,
-            # calling the LLM again with the new tool data!
+        print(f"   -> Output: {result}")
 
+        ctx.add_message(role="tool", content=result, tool_call_id=tool["id"])
+
+    except Exception as e:
+      print(f"\n❌ Error: {e}\n")
 
 def choose_mode():
     """Let user choose between streaming and non-streaming"""
