@@ -1,16 +1,16 @@
 import json
+from tool.tool import tools
 from openrouter import OpenRouter
 import requests
 
 
 class LLMClient:
   def __init__(self):
-    self.api_key = "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"
+    self.api_key = "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"
     self.model = "mistralai/devstral-2512:free"
     self.base_url = "https://openrouter.ai/api/v1"
 
-  def chat(self,message,max_tokens=2000):
-
+  def chat(self, message, max_tokens=2000):
     headers = {
       "Authorization" : f"Bearer {self.api_key}",
       "Content-Type": "application/json"
@@ -19,7 +19,9 @@ class LLMClient:
     data = {
       "model" : self.model,
       "messages" : message,
-      "max_tokens" : max_tokens
+      "max_tokens" : max_tokens,
+      "tools": tools,
+      "tool_choice" : "auto"
     }
 
     try: 
@@ -38,10 +40,7 @@ class LLMClient:
       print(f"Error calling OpenRouter: {e}")
       raise
 
-
-
-  def chat_stream(self,messages,max_tokens=2000):
-
+  def chat_stream(self, messages, max_tokens=2000):
     headers = {
       "Authorization" : f"Bearer {self.api_key}",
       "Content-Type": "application/json"
@@ -51,8 +50,9 @@ class LLMClient:
       "model" : self.model,
       "messages" : messages,
       "max_tokens" : max_tokens,
-      "stream": True
-
+      "stream": True,
+      "tools": tools,
+      "tool_choice" : "auto"
     }
 
     try:
@@ -66,25 +66,15 @@ class LLMClient:
 
       for line in response.iter_lines():
         if line:
-          ## because data comes in byte(numbers like 71) so we convert to utf so that we can work
           line = line.decode('utf-8')
-
-          # so strip space ko remove kar deta h like  " hello ".strip()     → "hello"
-
-          ## so iska matlab strp karne ke badd "" empty aai to ise mt lo bs
           if not line.strip():
             continue
 
-         ## so data come likes this
-         ## "data: {\"choices\":[{\"delta\":{\"content\":\"Hel\"}}]}"
-         ## so the data part is useless so we remove that 
           if line.startswith("data: "):
             line = line[6:]
-
           elif line.startswith("data:"):
             line = line[5:]
 
-          ## it means ab aur data nahi aaega so break
           if line.strip() == "[DONE]":
             break
 
@@ -93,14 +83,20 @@ class LLMClient:
             
             if 'choices' in chunk and len(chunk['choices']) > 0:
               delta = chunk['choices'][0].get('delta',{})
-              content = delta.get('content','')
-
-              if content:
-                yield content
+              
+              if "content" in delta:
+                yield delta["content"]
+              
+              # --- VITAL FIX BELOW ---
+              if "tool_calls" in delta:
+                # We check specifically for the key to avoid the error
+                yield {
+                  "tool_calls": delta["tool_calls"] 
+                }
+              # -----------------------
           
           except json.JSONDecodeError:
-                        # Skip malformed JSON
-                 continue
+             continue
     
     except Exception as e:
       print(f"Error calling OpenRouter: {e}")

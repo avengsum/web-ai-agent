@@ -1,6 +1,7 @@
+import os
 import tiktoken
 
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT = f"""
 You are an expert AI Software Engineer. Your goal is to help the user build, debug, and maintain high-quality code.
 
 ### OPERATING PRINCIPLES
@@ -20,26 +21,42 @@ You are an expert AI Software Engineer. Your goal is to help the user build, deb
 - If you are suggesting a file change, show the specific lines to be changed or provide the full updated file.
 - Use a clear, professional tone.
 
-Current Working Directory: {cwd}
+- NEVER simulate or pretend to run terminal commands. If you need to see files, you MUST use the list_files tool. Do not write the command as text; trigger the function."
+
+Current Working Directory: {os.getcwd()}
 """
 
 class ContextManager:
-  def __init__(self,max_tokens=2048,system_prompt=system_prompts):
+  def __init__(self,max_tokens=2048):
     self.max_tokens = max_tokens
     self.model = "mistralai/devstral-2512:free"
-    self.history = [{"role": "system", "content": system_prompt}]
+    self.system_prompt = SYSTEM_PROMPT
+    self.history = [{"role": "system", "content": SYSTEM_PROMPT}]
     self.encoding = tiktoken.get_encoding("cl100k_base")
 
   
   def count_tokens(self,text):
     return len(self.encoding.encode(text))
   
-  def add_message(self,role,content):
+  def add_message(self,role,content,tool_calls=None,tool_call_id=None):
 
-    self.history.append({
+    if content is None:
+      content = ""
+
+    message = {
       "role":role,
       "content":content
-    })
+    }
+
+    if role == "assistant" and tool_calls is not None:
+      message["tool_calls"] = tool_calls
+
+    if role == "tool":
+      if tool_call_id is None:
+        raise ValueError("tool_call_id is required for tool messages")
+      message["tool_call_id"] = tool_call_id
+    
+    self.history.append(message)
     self.manage_context()
 
   def manage_context(self):
