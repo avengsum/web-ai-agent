@@ -16,5 +16,23 @@ tools = [
                 "required": []
             }
         }
-    }
+    },
+    {
+    "type": "function",
+    "function": {
+        "name": "read_file",
+        "description": "Read the contents of a text file",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path to the file to read"
+                }
+            },
+            "required": ["path"]
+        }
+      }
+   }
+
 ]

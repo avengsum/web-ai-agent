@@ -2,6 +2,7 @@ import json
 from agent.core import LLMClient
 from context import context
 from tool import list_file
+from tool import read
 
 
 def non_streaming():
@@ -128,12 +129,12 @@ def stream_Res():
 
       print("\n") 
 
-      # Case 1: Just text, no tools
+      # Case1:text no tools
       if not tool_calls_buffer:
         ctx.add_message("assistant", full_response)
         continue
 
-      # Case 2: Tools were called
+      # Case2: Tools call
       normalized_tool_calls = list(tool_calls_buffer.values())
 
       ctx.add_message(
@@ -153,6 +154,8 @@ def stream_Res():
 
           if func_name == "list_files":
             result = list_file.list_files(args.get("directory", "."))
+          elif func_name == "read_file":
+            result = read.read_file(args.get("path"))
           else:
             result = f"Error: Unknown tool '{func_name}'"
 
