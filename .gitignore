@@ -2,3 +2,4 @@
 config
 test.py
 new.py
+__pycache__
