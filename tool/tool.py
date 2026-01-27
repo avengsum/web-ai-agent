@@ -1,6 +1,7 @@
 from tool.tool_manager import ToolManager
 from tool.list_file import list_files
 from tool.read import read_file
+from tool.write import writeFile
 
 tool_manager = ToolManager()
 
@@ -36,4 +37,31 @@ tool_manager.register(
         "required": ["path"]
     },
     tool=read_file
+)
+
+# write
+
+tool_manager.register(
+  name="write_file",
+    description="Create or update a text file",
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Relative path to the file"
+            },
+            "content": {
+                "type": "string",
+                "description": "Text content to write"
+            },
+            "mode": {
+                "type": "string",
+                "enum": ["overwrite", "append"],
+                "description": "Write mode"
+            }
+        },
+        "required": ["path", "content", "mode"]
+    },
+    tool=writeFile
 )
