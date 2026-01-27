@@ -1,8 +1,7 @@
 import json
-from tool.tool import tools
 from openrouter import OpenRouter
 import requests
-
+from tool.tool import tool_manager
 
 class LLMClient:
   def __init__(self):
@@ -20,7 +19,7 @@ class LLMClient:
       "model" : self.model,
       "messages" : message,
       "max_tokens" : max_tokens,
-      "tools": tools,
+      "tools": tool_manager.getSchema() ,
       "tool_choice" : "auto"
     }
 
@@ -50,7 +49,7 @@ class LLMClient:
       "messages" : messages,
       "max_tokens" : max_tokens,
       "stream": True,
-      "tools": tools,
+      "tools": tool_manager.getSchema(),
       "tool_choice" : "auto"
     }
 

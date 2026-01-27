@@ -1,22 +1,22 @@
 import json
 from agent.core import LLMClient
 from context import context
-from tool import list_file
-from tool import read
+# from tool import list_file
+# from tool import read
+from tool.tool import tool_manager
 
+model = LLMClient()
+ctx = context.ContextManager()
 
 def non_streaming():
   print("\n[1] Initializing LLM connections...")
-  
-  model = LLMClient()
-  ctx = context.ContextManager()
 
   while True:
     user_input = input("prompts:")
 
     ## exit commnand
 
-    if user_input.lower() in ['exit','quit','bye']:
+    if user_input.lower() in ['exit','quit']:
       print("bye bye")
       break
 
@@ -47,15 +47,19 @@ def non_streaming():
     )
 
     for tool_call in res["tool_calls"]:
-      tool_id = tool_call["id"]
-      func_name = tool_call["function"]["name"]
-      args = json.loads(tool_call["function"]["arguments"] or "{}")
-      
-      if func_name == "list_files":
-        result = list_file.list_files(args.get("directory","."))
+      # before tool manger
 
-      else:
-        result = f"Error: Unknown tool '{func_name}'"
+      tool_id = tool_call["id"]
+      # func_name = tool_call["function"]["name"]
+      # args = json.loads(tool_call["function"]["arguments"] or "{}")
+      
+      # if func_name == "list_files":
+      #   result = list_file.list_files(args.get("directory","."))
+
+      # else:
+      #   result = f"Error: Unknown tool '{func_name}'"
+      
+      result = tool_manager.run(tool_call)
 
       ## send tool result back
       ctx.add_message(role="tool", 
@@ -77,14 +81,11 @@ def non_streaming():
 
 def stream_Res():
   print("\n[1] Initializing LLM connections... for streaming response")
-  
-  model = LLMClient()
-  ctx = context.ContextManager()
 
   while True:
     user_input = input("You: ").strip()
 
-    if user_input.lower() in ['exit' , 'quit' , 'bye']:
+    if user_input.lower() in ['exit' , 'quit']:
       print("\n goodbye")
       break
 
@@ -145,24 +146,27 @@ def stream_Res():
 
       # Execute Tools
       for tool in normalized_tool_calls:
-        try:
-          func_name = tool["function"]["name"]
-          args_str = tool["function"]["arguments"]
-          args = json.loads(args_str) if args_str else {}
-          
-          print(f"🛠️  Executing: {func_name} | Args: {args}")
+        # before tool manager
+        
+    #     func_name = tool["function"]["name"]
+    #     args_str = tool["function"]["arguments"]
+    #     args = json.loads(args_str) if args_str else {}
 
-          if func_name == "list_files":
-            result = list_file.list_files(args.get("directory", "."))
-          elif func_name == "read_file":
-            result = read.read_file(args.get("path"))
-          else:
-            result = f"Error: Unknown tool '{func_name}'"
+    #     print(f"🛠️  Executing: {func_name} | Args: {args}")
 
-        except json.JSONDecodeError:
-           result = "Error: Invalid JSON arguments from AI"
-        except Exception as e:
-           result = f"Error executing tool: {e}"
+    #     if func_name == "list_files":
+    #         result = list_file.list_files(args.get("directory", "."))
+    #     elif func_name == "read_file":
+    #         result = read.read_file(args.get("path"))
+    #     else:
+    #         result = f"Error: Unknown tool '{func_name}'"
+
+    # except json.JSONDecodeError:
+    #     result = "Error: Invalid JSON arguments from AI"
+    # except Exception as e:
+    #     result = f"Error executing tool: {e}"
+
+        result = tool_manager.run(tool)
 
         print(f"   -> Output: {result}")
 
