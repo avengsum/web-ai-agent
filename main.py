@@ -1,9 +1,13 @@
 import json
+import os
 from agent.core import LLMClient
 from context import context
 # from tool import list_file
 # from tool import read
 from tool.tool import tool_manager
+from tool.write import writeFile
+from utils import confirm_changes
+from utils.compare import compare
 
 model = LLMClient()
 ctx = context.ContextManager()
@@ -166,7 +170,46 @@ def stream_Res():
     # except Exception as e:
     #     result = f"Error executing tool: {e}"
 
-        result = tool_manager.run(tool)
+    ## specially for write tool because of confimation function
+        tool_name = tool["function"]["name"]
+        args = json.loads(tool["function"]["arguments"] or "{}")
+
+        if tool_name == "write_file":
+          path = args.get("path")
+          new_content = args.get("content")
+          mode = args.get("mode")
+
+          if path and os.path.exists(path):
+            old_content = tool.read_file(path)
+
+          else:
+            old_content = ""
+
+          diff = compare(old_content,new_content,path)
+
+          if diff == "No changes":
+            print("No changes detected so no write operation")
+
+            ctx.add_message(role="tool",content="No changes",tool_call_id=tool[id])
+            continue
+
+          if not confirm_changes.confirmChanges(diff):
+            print("user deciled changes")
+            ctx.add_message(role="tool",content="write operation cancelled by user",tool_call_id=tool[id])
+            continue
+
+          result = writeFile(path,new_content,mode)
+          print(result)
+
+          ctx.add_message(
+            role="tool",
+            content=result,
+            tool_call_id=tool["id"]
+          )
+
+        ## all other tools
+        else:
+          result = tool_manager.run(tool)
 
         print(f"   -> Output: {result}")
 

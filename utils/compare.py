@@ -1,6 +1,6 @@
 import difflib
 
-def compare(old:str,new:str,path,str) -> str:
+def compare(old:str,new:str,path:str) -> str:
   old_lines = old.splitlines(keepends=True)
   ## splitlines do this example hello\nworld\n -> [hello\n , world\n]
 
