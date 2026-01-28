@@ -6,7 +6,7 @@ from tool.tool import tool_manager
 class LLMClient:
   def __init__(self):
     self.api_key = "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"
-    self.model = "mistralai/devstral-2512:free"
+    self.model = "z-ai/glm-4.5-air:free"
     self.base_url = "https://openrouter.ai/api/v1"
 
   def chat(self, message, max_tokens=2000):
@@ -39,6 +39,7 @@ class LLMClient:
       raise
 
   def chat_stream(self, messages, max_tokens=2000):
+    edit_happened = False
     headers = {
       "Authorization" : f"Bearer {self.api_key}",
       "Content-Type": "application/json"

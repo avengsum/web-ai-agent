@@ -1,3 +1,4 @@
+from tool.edit_file import edit
 from tool.tool_manager import ToolManager
 from tool.list_file import list_files
 from tool.read import read_file
@@ -64,4 +65,28 @@ tool_manager.register(
         "required": ["path", "content", "mode"]
     },
     tool=writeFile
+)
+
+tool_manager.register(
+    name="edit_file",
+    description="Edit a specific part of a file using search and replace",
+    parameters={
+        "type": "object",
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Relative path to the file"
+            },
+            "search": {
+                "type": "string",
+                "description": "Text to search for"
+            },
+            "replace": {
+                "type": "string",
+                "description": "Replacement text"
+            }
+        },
+        "required": ["path", "search", "replace"]
+    },
+    tool=edit
 )

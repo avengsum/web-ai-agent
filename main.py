@@ -2,8 +2,8 @@ import json
 import os
 from agent.core import LLMClient
 from context import context
-# from tool import list_file
-# from tool import read
+from tool.edit_file import edit
+from tool.read import read_file
 from tool.tool import tool_manager
 from tool.write import writeFile
 from utils import confirm_changes
@@ -85,7 +85,6 @@ def non_streaming():
 
 def stream_Res():
   print("\n[1] Initializing LLM connections... for streaming response")
-
   while True:
     user_input = input("You: ").strip()
 
@@ -180,22 +179,24 @@ def stream_Res():
           mode = args.get("mode")
 
           if path and os.path.exists(path):
-            old_content = tool.read_file(path)
+            old_content = read_file(path)
 
           else:
             old_content = ""
+
+          print("this is write tool")
 
           diff = compare(old_content,new_content,path)
 
           if diff == "No changes":
             print("No changes detected so no write operation")
 
-            ctx.add_message(role="tool",content="No changes",tool_call_id=tool[id])
+            ctx.add_message(role="tool",content="No changes",tool_call_id=tool["id"])
             continue
 
           if not confirm_changes.confirmChanges(diff):
             print("user deciled changes")
-            ctx.add_message(role="tool",content="write operation cancelled by user",tool_call_id=tool[id])
+            ctx.add_message(role="tool",content="write operation cancelled by user",tool_call_id=tool["id"])
             continue
 
           result = writeFile(path,new_content,mode)
@@ -207,6 +208,60 @@ def stream_Res():
             tool_call_id=tool["id"]
           )
 
+        elif tool_name == "edit_file":
+          print("this is edit tool")
+          path = args.get("path")
+          search = args.get("search")   
+          replace = args.get("replace")
+          print(f"search : {search}")
+          print(f"replace : {replace}")
+          
+          old_content = read_file(path)
+
+          if not old_content or old_content.startswith("Error"):
+              old_content = ""
+
+          new_content = edit(path, search=search, replace=replace)
+          if not new_content or new_content.startswith("Error"):
+            ctx.add_message(
+              role="tool",
+              content=new_content or "Edit failed",
+              tool_call_id=tool["id"]
+            )
+            continue
+
+          diff = compare(old_content,new_content,path)
+
+          if diff == "No changes":
+            print("No Changes detected")
+
+            ctx.add_message(
+              role="tool",
+              content="No changes",
+              tool_call_id=tool["id"]
+            )
+            continue
+
+          if not confirm_changes.confirmChanges(diff):
+            print("user decliled changes")
+
+            ctx.add_message(
+              role="tool",
+              content="edit operation cancelled by user",
+              tool_call_id=tool["id"]
+            )
+            continue
+
+          result = writeFile(path,new_content,"overwrite")
+
+          print(result)
+
+          ctx.add_message(
+            role="tool",
+            content=result,
+            tool_call_id=tool["id"]
+          )
+            
         ## all other tools
         else:
           result = tool_manager.run(tool)
