@@ -85,6 +85,7 @@ def non_streaming():
 
 def stream_Res():
   print("\n[1] Initializing LLM connections... for streaming response")
+  ## so this outer loop is for contouns question asking
   while True:
     user_input = input("You: ").strip()
 
@@ -97,58 +98,63 @@ def stream_Res():
 
     ctx.add_message("user", user_input)
 
-    try:
-      full_response = ""
-      # Buffer to accumulate partial tool chunks
-      tool_calls_buffer = {} 
-      
-      print("AI: ", end="", flush=True)
+    ## this inner is for continuos ai agent tool kare aur usk response se phir new tool
+    ## kare so its true agentic loop ot will make them learn and apply
 
-      for chunk in model.chat_stream(ctx.get_messages()):
-        if isinstance(chunk, str):
-          print(chunk, end="", flush=True)
-          full_response += chunk
+    while True:
+       try:
+        full_response = ""
+        # Buffer to accumulate partial tool chunks
+        tool_calls_buffer = {} 
+      
+        print("AI: ", end="", flush=True)
+
+        for chunk in model.chat_stream(ctx.get_messages()):
+          if isinstance(chunk, str):
+            print(chunk, end="", flush=True)
+            full_response += chunk
         
-        elif isinstance(chunk, dict) and "tool_calls" in chunk:
-          for tc_chunk in chunk["tool_calls"]:
-            index = tc_chunk["index"]
+          elif isinstance(chunk, dict) and "tool_calls" in chunk:
+            for tc_chunk in chunk["tool_calls"]:
+              index = tc_chunk["index"]
             
-            # Initialize buffer for this index if not exists
-            if index not in tool_calls_buffer:
-              tool_calls_buffer[index] = {
+              # Initialize buffer for this index if not exists
+              if index not in tool_calls_buffer:
+                tool_calls_buffer[index] = {
                 "id": "",
                 "type": "function",
                 "function": { "name": "", "arguments": "" }
               }
             
-            # Combine the chunks
-            if "id" in tc_chunk:
-              tool_calls_buffer[index]["id"] += tc_chunk["id"]
+              # Combine the chunks
+              if "id" in tc_chunk:
+               tool_calls_buffer[index]["id"] += tc_chunk["id"]
             
-            if "function" in tc_chunk:
-              if "name" in tc_chunk["function"]:
-                tool_calls_buffer[index]["function"]["name"] += tc_chunk["function"]["name"]
-              if "arguments" in tc_chunk["function"]:
-                tool_calls_buffer[index]["function"]["arguments"] += tc_chunk["function"]["arguments"]
+               if "function" in tc_chunk:
+                if "name" in tc_chunk["function"]:
+                  tool_calls_buffer[index]["function"]["name"] += tc_chunk["function"]["name"]
+                if "arguments" in tc_chunk["function"]:
+                  tool_calls_buffer[index]["function"]["arguments"] += tc_chunk["function"]["arguments"]
 
-      print("\n") 
+        print("\n") 
 
-      # Case1:text no tools
-      if not tool_calls_buffer:
-        ctx.add_message("assistant", full_response)
-        continue
+        # Case1:text no tools 
+        if not tool_calls_buffer:
+          ctx.add_message("assistant", full_response)
+          break  ## ye break is liye kyuki ab agent ko call karne ke liye kuch nahi so break
+        ## the loop
 
-      # Case2: Tools call
-      normalized_tool_calls = list(tool_calls_buffer.values())
+         # Case2: Tools call
+        normalized_tool_calls = list(tool_calls_buffer.values())
 
-      ctx.add_message(
-        role="assistant",
-        content=full_response if full_response else None,
-        tool_calls=normalized_tool_calls
-      )
+        ctx.add_message(
+          role="assistant",
+          content=full_response if full_response else None,
+          tool_calls=normalized_tool_calls
+         )
 
-      # Execute Tools
-      for tool in normalized_tool_calls:
+         # Execute Tools
+        for tool in normalized_tool_calls:
         # before tool manager
         
     #     func_name = tool["function"]["name"]
@@ -170,10 +176,10 @@ def stream_Res():
     #     result = f"Error executing tool: {e}"
 
     ## specially for write tool because of confimation function
-        tool_name = tool["function"]["name"]
-        args = json.loads(tool["function"]["arguments"] or "{}")
+         tool_name = tool["function"]["name"]
+         args = json.loads(tool["function"]["arguments"] or "{}")
 
-        if tool_name == "write_file":
+         if tool_name == "write_file":
           path = args.get("path")
           new_content = args.get("content")
           mode = args.get("mode")
@@ -208,7 +214,7 @@ def stream_Res():
             tool_call_id=tool["id"]
           )
 
-        elif tool_name == "edit_file":
+         elif tool_name == "edit_file":
           print("this is edit tool")
           path = args.get("path")
           search = args.get("search")   
@@ -272,9 +278,11 @@ def stream_Res():
         print(f"   -> Output: {result}")
 
         ctx.add_message(role="tool", content=result, tool_call_id=tool["id"])
+       except Exception as e:
+        print(f"\n❌ Error: {e}\n")
+        break
 
-    except Exception as e:
-      print(f"\n❌ Error: {e}\n")
+    
 
 def choose_mode():
     """Let user choose between streaming and non-streaming"""
