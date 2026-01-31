@@ -222,10 +222,11 @@ def stream_Res():
               old_content = ""
 
           new_content = edit(path, search=search, replace=replace)
-          if not new_content or new_content.startswith("Error"):
+          if not new_content or new_content.startswith("Error") or new_content == "No changes made":
+            result_msg = new_content if new_content else "Error: Edit failed (unknown reason)"
             ctx.add_message(
               role="tool",
-              content=new_content or "Edit failed",
+              content=result_msg,
               tool_call_id=tool["id"]
             )
             continue
@@ -261,6 +262,8 @@ def stream_Res():
             content=result,
             tool_call_id=tool["id"]
           )
+
+          continue
             
         ## all other tools
         else:

@@ -34,5 +34,7 @@ def edit(path:str,search:str,replace:str) -> str:
     if content == new_content:
       return "No changes made"
     
+    return new_content
+    
   except Exception as e:
     return f"Error edditing file {str(e)}"
