@@ -3,10 +3,12 @@ import os
 from agent.core import LLMClient
 from context import context
 from tool.edit_file import edit
+from tool.execute_cmd import exe_cmd
 from tool.read import read_file
 from tool.tool import tool_manager
 from tool.write import writeFile
 from utils import confirm_changes
+from utils.cmd_confirm import cmdConfirm
 from utils.compare import compare
 
 model = LLMClient()
@@ -271,6 +273,27 @@ def stream_Res():
 
           continue
             
+         elif tool_name == "execute_command":
+            command = args.get("command")
+
+            if not cmdConfirm(command):
+              print("User do not want the agent to run the command")
+
+              ctx.add_message(
+               role="tool",
+               content="User do not want the agent to run the command",
+               tool_call_id=tool["id"]
+              )
+              continue
+
+            result = exe_cmd(command)
+
+            ctx.add_message(
+               role="tool",
+               content=result,
+               tool_call_id=tool["id"]
+            )
+
         ## all other tools
         else:
           result = tool_manager.run(tool)

@@ -1,4 +1,5 @@
 from tool.edit_file import edit
+from tool.execute_cmd import exe_cmd
 from tool.tool_manager import ToolManager
 from tool.list_file import list_files
 from tool.read import read_file
@@ -89,4 +90,20 @@ tool_manager.register(
         "required": ["path", "search", "replace"]
     },
     tool=edit
+)
+
+tool_manager.register(
+    name="execute_command",
+    description="Execute a terminal command (like 'python file.py'). captures output and errors.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "command": {
+                "type": "string",
+                "description": "The command to run in the terminal"
+            }
+        },
+        "required": ["command"]
+    },
+    tool=exe_cmd
 )
