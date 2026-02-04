@@ -2,41 +2,52 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from agent.core import LLMClient
 
 load_dotenv()
 
 def clean_html(html_content):
   soup = BeautifulSoup(html_content,"html.parser")
 
-  for element in soup(["script","style","nav","footer","iframe","svg"]):
-    element.decompose()
+  text = soup.get_text(separator='\n')
+    
+  lines = (line.strip() for line in text.splitlines())
+  chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+  clean_text = '\n'.join(chunk for chunk in chunks if chunk)
+    
+  return clean_text[:25000]
 
-  lines = []
-  for element in soup.descendants:
+#   for element in soup(["script","style","nav","footer","iframe","svg"]):
+#     element.decompose()
 
-    if element.name in ['h1', 'h2', 'h3']:
-      lines.append(f"\n# {element.get_text().strip()}\n")
+#   lines = []
+#   for element in soup.descendants:
 
-    elif element.name == 'p':
-      lines.append(element.get_text().strip())
+#     if element.name in ['h1', 'h2', 'h3']:
+#       lines.append(f"\n# {element.get_text().strip()}\n")
 
-    elif element.name == 'li':
-      lines.append(f"- {element.get_text().strip()}")
+#     elif element.name == 'p':
+#       lines.append(element.get_text().strip())
 
-    elif element.name == 'code':
-      lines.append(f"`{element.get_text().strip()}`")
+#     elif element.name == 'li':
+#       lines.append(f"- {element.get_text().strip()}")
 
-    elif element.name == 'a':
-      pass
+#     elif element.name == 'code':
+#       lines.append(f"`{element.get_text().strip()}`")
+
+#     elif element.name == 'a':
+#       pass
 
   
-  text = "\n".join(line for line in lines if line)
+#   text = "\n".join(line for line in lines if line)
 
-## to save token we are getting less char
-  return text[:10000]
+# ## to save token we are getting less char
+#   return text[:10000]
+
 
 def web_fetch(url:str,question:str):
+
+  from agent.core import LLMClient
+
   print(f"Fetching url : {url}")
 
   headers = {
@@ -49,7 +60,8 @@ def web_fetch(url:str,question:str):
     ## get html resposne
     respose = requests.get(url,headers=headers,timeout=10)
 
-    respose.raise_for_status()
+    if respose.status_code != 200:
+      return f"Error: Website returned status code {respose.status_code} (Likely blocked or not found)."
 
 
     ## lets clena it

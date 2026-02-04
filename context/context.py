@@ -33,6 +33,9 @@ INSTRUCTIONS:
 1. The date provided above is ACCURATE. Do NOT search the internet to check the current date.
 2. If the user asks "what day is it", simply reply using the SYSTEM INFORMATION above.
 3. Only use Web Search for external knowledge, documentation, or events.
+4. DO NOT use 'python -c' one-liners. They fail due to quoting errors.
+5. ALWAYS use 'write_file' to create a python script, then run it with 'python script.py'.
+6. When reading a website, use 'web_fetch'.
 
 """
 

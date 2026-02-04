@@ -8,6 +8,7 @@ from tool.execute_cmd import exe_cmd
 from tool.glob import glob_files
 from tool.read import read_file
 from tool.tool import tool_manager
+from tool.webFetch_tool import web_fetch
 from tool.webSearch_tool import webSearch
 from tool.write import writeFile
 from utils import confirm_changes
@@ -19,7 +20,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 model = LLMClient(api_key=os.getenv("GROQ_API_KEY"),model="llama-3.1-8b-instant",base_url="https://api.groq.com/openai/v1")
-less = 6
 
 ctx = context.ContextManager()
 
@@ -213,7 +213,11 @@ def stream_Res():
 
           if not confirm_changes.confirmChanges(diff):
             print("user deciled changes")
-            ctx.add_message(role="tool",content="write operation cancelled by user",tool_call_id=tool["id"])
+            ctx.add_message(
+              role="tool",
+              content="write operation cancelled by user",
+              tool_call_id=tool["id"]
+              )
             continue
 
           result = writeFile(path,new_content,mode)
@@ -344,9 +348,26 @@ def stream_Res():
              tool_call_id=tool["id"]
            )
            continue
+         
+        #  elif tool_name == "web_fetch":
+        #    url = args.get("url")
+        #    question = args.get("question")
+
+
+        #    result = web_fetch(url=url,question=question)
+
+        #    ctx.add_message(
+        #      role="tool",
+        #      content= result,
+        #      tool_call_id=tool["id"]
+        #    )
+        #    continue
+           
 
         ## all other tools
         else:
+          print(f"🛠️  Running Tool: {tool_name}")
+
           result = tool_manager.run(tool)
 
         print(f"   -> Output: {result}")

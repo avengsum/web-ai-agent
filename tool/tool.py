@@ -5,6 +5,7 @@ from tool.glob import glob_files
 from tool.tool_manager import ToolManager
 from tool.list_file import list_files
 from tool.read import read_file
+from tool.webFetch_tool import web_fetch
 from tool.webSearch_tool import webSearch
 from tool.write import writeFile
 
@@ -161,5 +162,25 @@ tool_manager.register(
         "required": ["query"]
     },
     tool=webSearch
+)
+
+tool_manager.register(
+    name="web_fetch",
+    description="Visit a specific URL and read its content to answer a question. Use this when the user provides a link OR when you find a link via search that you need to analyze.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "url": {
+                "type": "string",
+                "description": "The URL of the page to read (must start with http/https)"
+            },
+            "question": {
+                "type": "string",
+                "description": "The specific information you want to find on the page (e.g. 'What is the main summary?' or 'Find the installation command')"
+            }
+        },
+        "required": ["url", "question"]
+    },
+    tool=web_fetch
 )
 
