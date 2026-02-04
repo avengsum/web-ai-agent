@@ -184,3 +184,17 @@ tool_manager.register(
     tool=web_fetch
 )
 
+tool_manager.register(
+    name="add_todo",
+    description="Add a task to the project plan. ALWAYS do this first.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "task": {"type": "string", "description": "Description of the task"},
+            "dependencies": {"type": "string", "description": "IDs of tasks that must finish first (e.g. '1,3')"}
+        },
+        "required": ["task"]
+    },
+    tool=add_todo
+)
+
