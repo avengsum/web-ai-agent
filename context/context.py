@@ -48,7 +48,7 @@ INSTRUCTIONS:
 """
 
 class ContextManager:
-  def __init__(self,max_tokens=2000):
+  def __init__(self,max_tokens=10000):
     self.max_tokens = max_tokens
     self.model = "mistralai/devstral-2512:free"
     self.system_prompt = SYSTEM_PROMPT

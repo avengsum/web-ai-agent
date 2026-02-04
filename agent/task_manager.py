@@ -7,6 +7,7 @@ state = ".agent_state.json"
 class TaskManager:
   def __init__(self):
     self.tasks = []
+    self.load_state()
 
   
   def load_state(self):
@@ -16,7 +17,10 @@ class TaskManager:
         with open(state,"r") as f:
           self.tasks = json.load(f)
       except:
-        self_task = []
+        self.task = []
+    
+    else:
+      self.task = []
   
   def save_state(self):
     with open(state,"w") as f:
@@ -39,7 +43,7 @@ class TaskManager:
   def update_todo(self,task_id: int , status: str, notes: str = ""):
     for t in self.tasks:
       if t["id"] == task_id:
-        t["status"] == status
+        t["status"] = status
 
         if notes:
           t["notes"] = notes
@@ -50,7 +54,7 @@ class TaskManager:
     return f"Error: Task {task_id} not found"
   
   def mark_done(self,task_id: int, verification:str):
-    for t in task_id:
+    for t in self.tasks:
       if t["id"] == task_id:
         t["status"] = "COMPLETED"
         t["verification"] = verification

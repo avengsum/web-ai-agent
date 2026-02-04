@@ -1,7 +1,7 @@
 from agent.task_manager import TaskManager
 
 
-task_manager = TaskManager
+task_manager = TaskManager()
 
 def add_todo(task: str, dependencies: str = ""):
     """
@@ -14,7 +14,7 @@ def add_todo(task: str, dependencies: str = ""):
 def update_status(task_id: int, status: str, notes: str = ""):
     """
     Update a task status. 
-    Status must be: PENDING, IN_PROGRESS, FAILED
+    Status option : PENDING, IN_PROGRESS, FAILED
     """
     valid_status = ["PENDING", "IN_PROGRESS", "FAILED"]
     if status not in valid_status:

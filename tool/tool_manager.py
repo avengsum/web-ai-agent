@@ -38,11 +38,17 @@ class ToolManager:
     try:
       args = json.loads(agrument) if agrument else {}
 
+      if args is None:
+        args = {}
+
     except json.decoder.JSONDecodeError:
       return "Error: invalid json argument from llm"
     
     try:
       return self._tools[name](**args)
+    
+    except TypeError as e:
+      return f"Error: Tool arguments mismatch. {str(e)}"
     
     ## ** used because llm give you this data {path : main.py }
     ## so direct ye pass karoge to error confirm h so ** isko main.py kar deta h simple

@@ -4,3 +4,4 @@ test.py
 new.py
 __pycache__
 .env
+.agent_state.json

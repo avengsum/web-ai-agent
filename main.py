@@ -1,6 +1,7 @@
 import json
 import os
 from agent.core import LLMClient
+from agent.task_manager import TaskManager
 from context import context
 from tool import grep
 from tool.edit_file import edit
@@ -19,9 +20,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-model = LLMClient(api_key=os.getenv("GROQ_API_KEY"),model="llama-3.1-8b-instant",base_url="https://api.groq.com/openai/v1")
+model = LLMClient(api_key=os.getenv("GROQ_API_KEY"),model="openai/gpt-oss-120b",base_url="https://api.groq.com/openai/v1")
 
 ctx = context.ContextManager()
+
+task = TaskManager()
 
 def non_streaming():
   print("\n[1] Initializing LLM connections...")
@@ -106,6 +109,11 @@ def stream_Res():
 
     if not user_input:
       continue
+
+    plan_status = task.get_task_prompt()
+    full_system_prompt = context.SYSTEM_PROMPT + "\n" + plan_status
+
+    ctx.add_message("system", full_system_prompt)
 
     ctx.add_message("user", user_input)
 
