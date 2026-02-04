@@ -2,6 +2,7 @@ from tool import grep
 from tool.edit_file import edit
 from tool.execute_cmd import exe_cmd
 from tool.glob import glob_files
+from tool.todo import add_todo, mark_done, update_status
 from tool.tool_manager import ToolManager
 from tool.list_file import list_files
 from tool.read import read_file
@@ -196,5 +197,34 @@ tool_manager.register(
         "required": ["task"]
     },
     tool=add_todo
+)
+
+tool_manager.register(
+    name="update_todo",
+    description="Update task status to IN_PROGRESS or FAILED.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "task_id": {"type": "integer"},
+            "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "FAILED"]},
+            "notes": {"type": "string", "description": "Reason for status change"}
+        },
+        "required": ["task_id", "status"]
+    },
+    tool=update_status
+)
+
+tool_manager.register(
+    name="mark_done",
+    description="Mark a task as COMPLETED. Requires verification proof.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "task_id": {"type": "integer"},
+            "verification": {"type": "string", "description": "Output or proof that the task is done"}
+        },
+        "required": ["task_id", "verification"]
+    },
+    tool=mark_done
 )
 

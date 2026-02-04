@@ -58,7 +58,7 @@ class TaskManager:
         return f"Task {task_id} COMPLETED. Proof: {verification}"
     return f"Error: Task {task_id} not found"
   
-  def get_system_prompt_addition(self):
+  def get_task_prompt(self):
         """
         Creates a markdown representation of the state for the System Prompt.
         """

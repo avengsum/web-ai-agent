@@ -1,9 +1,11 @@
 import os
+from agent.task_manager import TaskManager
 import tiktoken
 import datetime
 
 now = datetime.datetime.now().strftime("%A, %B %d, %Y %H:%M:%S")
 
+task = TaskManager()
 
 SYSTEM_PROMPT = f"""
 You are an expert AI Software Engineer. Your goal is to help the user build, debug, and maintain high-quality code.
@@ -36,6 +38,12 @@ INSTRUCTIONS:
 4. DO NOT use 'python -c' one-liners. They fail due to quoting errors.
 5. ALWAYS use 'write_file' to create a python script, then run it with 'python script.py'.
 6. When reading a website, use 'web_fetch'.
+7. You MUST follow the Project Plan below.
+8. If the plan is empty, use 'add_todo' to define steps.
+9. Before running code, mark the task as IN_PROGRESS.
+10. After success, mark the task as COMPLETED with verification.
+
+{task}
 
 """
 
