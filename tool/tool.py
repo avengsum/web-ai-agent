@@ -2,6 +2,7 @@ from tool import grep
 from tool.edit_file import edit
 from tool.execute_cmd import exe_cmd
 from tool.glob import glob_files
+from tool.subagent_tool import call_subagent
 from tool.todo import add_todo, mark_done, update_status
 from tool.tool_manager import ToolManager
 from tool.list_file import list_files
@@ -230,11 +231,11 @@ tool_manager.register(
 
 tool_manager.register(
     name="call_subagent",
-    description="Delegate a complex sub-task to a specialized agent. Use 'researcher' for gathering info, 'coder' for writing/testing code. The sub-agent returns a summary when done.",
+    description="Delegate a complex sub-task to a specialized agent. Use 'researcher' for gathering info, 'coder' for writing/testing code.",
     parameters={
         "type": "object",
         "properties": {
-            "agent_type": {
+            "agent_type": { 
                 "type": "string",
                 "enum": ["coder", "researcher"],
                 "description": "The type of specialist to spawn."
