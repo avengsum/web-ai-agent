@@ -228,3 +228,24 @@ tool_manager.register(
     tool=mark_done
 )
 
+tool_manager.register(
+    name="call_subagent",
+    description="Delegate a complex sub-task to a specialized agent. Use 'researcher' for gathering info, 'coder' for writing/testing code. The sub-agent returns a summary when done.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "agent_type": {
+                "type": "string",
+                "enum": ["coder", "researcher"],
+                "description": "The type of specialist to spawn."
+            },
+            "task_description": {
+                "type": "string",
+                "description": "Specific instructions for the sub-agent."
+            }
+        },
+        "required": ["agent_type", "task_description"]
+    },
+    tool=call_subagent
+)
+
